@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Cumplimiento</title>
+  <style>
+    :root {
+      --verde: #2ecc71;
+      --amarillo: #f1c40f;
+      --rojo: #e74c3c;
+      --azul: #3498db;
+      --gris: #f4f6f9;
+      --texto: #2c3e50;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: white;
+      color: var(--texto);
+    }
+
+    .dashboard {
+      max-width: 1200px;
+      margin: auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      grid-template-rows: auto auto;
+      gap: 24px;
+    }
+
+    /* HEADER */
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .header-left p {
+      margin: 4px 0 0;
+      color: #7f8c8d;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #dcdcdc;
+      color: var(--texto);
+    }
+
+    .btn-outline:hover {
+      background: rgb(242, 242, 242);
+      color: rgb(151, 151, 151);
+    }
+
+    .btn-primary {
+      background: rgb(178, 0, 0);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: rgb(245, 225, 225);
+      color: rgb(178, 0, 0);
+    }
+
+    /* Ocultar en PDF */
+    .no-pdf {
+      display: none;
+    }
+
+    /* TARJETAS */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    /* INDICADOR GLOBAL */
+    .global {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .global .value {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgb(0, 205, 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+    }
+
+    .global span {
+      font-size: 14px;
+      color: #384242;
+    }
+
+    /* GRÁFICA */
+    .chart h3 {
+      margin-bottom: 16px;
+    }
+
+    .bar {
+      margin-bottom: 12px;
+    }
+
+    .bar-label {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .bar-track {
+      background: #ecf0f1;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 26px;
+      background: rgb(0, 0, 130);
+      color: white;
+      font-size: 13px;
+      padding-left: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* TABLA */
+    .table {
+      grid-column: 1 / -1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #ecf0f1;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+      border-radius: 2px;
+    }
+
+    th {
+      font-weight: 600;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #eee;
+    }
+
+    /* SEMÁFORO */
+    .status {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      display: inline-block;
+    }
+
+    .green { background: var(--verde); }
+    .yellow { background: var(--amarillo); color: #2c3e50; }
+    .red { background: var(--rojo); }
+  </style>
+</head>
+
+<body>
+
+  <div class="dashboard" id="dashboard">
+
+    <!-- HEADER -->
+    <header>
+      <div class="header-left">
+        <h1>Reporte de Cumplimiento</h1>
+        <p>Periodo: Enero 2026</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-outline" id="btnImportar">Importar Excel</button>
+        <input type="file" id="fileInput" style="display:none" accept=".xlsx,.xls">
+        <button class="btn btn-primary" id="btnPDF">Convertir a PDF</button>
+      </div>
+    </header>
+
+    <!-- CUMPLIMIENTO GLOBAL -->
+    <div class="card global">
+      <div class="value">87%</div>
+      <span>Cumplimiento Total</span>
+    </div>
+
+    <!-- GRÁFICA -->
+    <div class="card chart">
+      <h3>Documentos Entregados</h3>
+
+      <div class="bar">
+        <div class="bar-label">PDF</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 80%">80%</div>
+        </div>
+      </div>
+
+      <div class="bar">
+        <div class="bar-label">Excel</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 65%">65%</div>
+        </div>
+      </div>
+
+      <div class="bar">
+        <div class="bar-label">XML</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 92%">92%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA EMPLEADOS -->
+    <div class="card table">
+      <h3>Detalle por Empleado</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Empleado</th>
+            <th>Cumplimiento</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ana López</td>
+            <td>92%</td>
+            <td><span class="status green">Alto</span></td>
+          </tr>
+          <tr>
+            <td>Carlos Pérez</td>
+            <td>78%</td>
+            <td><span class="status yellow">Medio</span></td>
+          </tr>
+          <tr>
+            <td>María Gómez</td>
+            <td>65%</td>
+            <td><span class="status red">Bajo</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Librerías -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    // Botón Importar Excel
+    const btnImportar = document.getElementById('btnImportar');
+    const fileInput = document.getElementById('fileInput');
+
+    btnImportar.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        console.log('Datos Excel:', jsonData);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // Botón PDF
+    const btnPDF = document.getElementById('btnPDF');
+
+    btnPDF.addEventListener('click', () => {
+      const dashboard = document.getElementById('dashboard').cloneNode(true);
+
+      // Ocultamos los botones en la copia
+      dashboard.querySelectorAll('.header-actions').forEach(el => el.classList.add('no-pdf'));
+
+      const opt = {
+        margin:       10,
+        filename:     'reporte_cumplimiento.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(dashboard).save();
+    });
+  </script>
+</body>
+</html>
