@@ -96,35 +96,8 @@
     .card {
       background: #fff;
       border-radius: 10px;
-      padding: 20px;
+      padding: 24px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    /* INDICADOR GLOBAL */
-    .global {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .global .value {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: rgb(0, 205, 0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 36px;
-      font-weight: bold;
-    }
-
-    .global span {
-      font-size: 14px;
-      color: #384242;
     }
 
     /* GRÁFICA VERTICAL */
@@ -133,38 +106,35 @@
     }
 
     .chart-vertical {
-      display: flex;
-      align-items: flex-end;
-      gap: 12px;
-      height: 180px;
+    display: flex;
+    align-items: flex-end;
+    height: 300px;        /* ✅ MÁS ALTA */
+    gap: 12px;            /* ✅ separación entre barras */
+    padding: 0 10px;
     }
 
     .bar-vertical-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     }
 
     .bar-vertical {
-      width: 30px;
-      background: var(--azul);
-      text-align: center;
-      color: white;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      border-radius: 6px 6px 0 0;
-      transition: 0.3s;
-      font-size: 12px;
+    width: 36px;          /* ✅ barras más gruesas */
+    background: linear-gradient(
+        to top,
+        #0a3cff,
+        #3b6cff
+    );
+    color: white;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 8px 8px 0 0;
+    font-size: 12px;
+    transition: height 0.6s ease;
     }
 
-    .bar-label-vertical {
-      margin-top: 6px;
-      font-size: 12px;
-      text-align: center;
-      word-break: break-word;
-    }
 
     /* TABLA */
     .table {
@@ -212,6 +182,26 @@
     .green { background: var(--verde); }
     .yellow { background: var(--amarillo); color: #2c3e50; }
     .red { background: var(--rojo); }
+
+    .pie-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    }
+
+    .pie {
+    width: 200px;     /* ✅ más grande */
+    height: 200px;
+    border-radius: 50%;
+    background: conic-gradient(var(--gris) 0% 100%);
+    }
+
+    .pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+    }
   </style>
 </head>
 
@@ -233,10 +223,16 @@
       </div>
     </header>
 
-    <!-- CUMPLIMIENTO GLOBAL -->
-    <div class="card global">
-      <div class="value">87%</div>
-      <span>Cumplimiento Total</span>
+    <!-- GRÁFICA DE PASTEL -->
+    <div class="card">
+    <h3>Cumplimiento General</h3>
+    <div class="pie-container">
+        <div class="pie" id="pieChart"></div>
+        <div class="pie-legend">
+        <span><b id="pieCumplido">0%</b> Cumplido</span>
+        <span><b id="piePendiente">0%</b> Pendiente</span>
+        </div>
+    </div>
     </div>
 
     <!-- GRÁFICA VERTICAL DOCUMENTOS -->
@@ -312,7 +308,7 @@
 
                 let estado = '', clase = '';
                 if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
-                else if (porcentaje >= 70) { estado = 'Medio'; clase = 'yellow'; }
+                else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
                 else { estado = 'Bajo'; clase = 'red'; }
 
                 const tr = document.createElement('tr');
@@ -323,6 +319,80 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+          // --- BARRAS DE PROGRESO POR DOCUMENTO (TOTAL EN 0) ---
+          const sheetNameDocs = 'Total_Documentos';
+          if (!workbook.SheetNames.includes(sheetNameDocs)) {
+              alert(`No se encontró la pestaña "${sheetNameDocs}"`);
+              return;
+          }
+
+          const worksheetDocs = workbook.Sheets[sheetNameDocs];
+          const rowsDocs = XLSX.utils.sheet_to_json(worksheetDocs, { defval: 0 });
+
+          const chartDocs = document.getElementById('chartDocs');
+          chartDocs.innerHTML = '';
+
+          rowsDocs.forEach(row => {
+            const nombre = row['DOCUMENTOS'] || '';
+            const total = Number(row['TOTAL']) || 0;
+            const totalCero = Number(row['TOTAL EN 0']) || 0;
+            if (!total) return; // evitamos dividir entre 0
+
+            // Porcentaje pendiente (TOTAL EN 0)
+            const porcentajePendiente = Math.round((totalCero / total) * 100);
+            // Porcentaje cumplido
+            const porcentajeCumplido = 100 - porcentajePendiente;
+
+            const container = document.createElement('div');
+            container.classList.add('bar-vertical-container');
+            container.style.height = '300px';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.alignItems = 'center';
+
+            // Barra principal
+            const bar = document.createElement('div');
+            bar.style.width = '36px';
+            bar.style.height = '100%';
+            bar.style.borderRadius = '8px';
+            bar.style.overflow = 'hidden';
+            bar.style.display = 'flex';
+            bar.style.flexDirection = 'column-reverse'; // para que la parte roja quede arriba
+
+            // Barra verde (cumplido)
+            const divCumplido = document.createElement('div');
+            divCumplido.style.height = porcentajeCumplido + '%';
+            divCumplido.style.background = 'linear-gradient(to top, #2ecc71, #27ae60)';
+
+            // Barra roja (pendiente)
+            const divPendiente = document.createElement('div');
+            divPendiente.style.height = porcentajePendiente + '%';
+            divPendiente.style.background = 'linear-gradient(to top, #e74c3c, #c0392b)';
+            divPendiente.style.display = 'flex';
+            divPendiente.style.alignItems = 'center';
+            divPendiente.style.justifyContent = 'center';
+            divPendiente.style.color = 'white';
+            divPendiente.style.fontWeight = '600';
+            divPendiente.style.fontSize = '12px';
+            divPendiente.textContent = porcentajePendiente + '%'; // solo en rojo
+
+            // Agregamos las barras al contenedor principal
+            bar.appendChild(divPendiente);
+            bar.appendChild(divCumplido);
+
+            // Etiqueta con el nombre del documento
+            const label = document.createElement('div');
+            label.textContent = nombre;
+            label.style.marginTop = '8px';
+            label.style.textAlign = 'center';
+            label.style.fontSize = '12px';
+            label.style.wordBreak = 'break-word';
+
+            container.appendChild(bar);
+            container.appendChild(label);
+            chartDocs.appendChild(container);
+          });
         };
 
         reader.readAsArrayBuffer(file);
@@ -347,43 +417,35 @@
 
       html2pdf().set(opt).from(dashboard).save();
     });
+    /* ============================
+         GRÁFICA DE PASTEL
+      ============================ */
+      let suma = 0;
+      let total = 0;
 
-    // --- BARRAS VERTICALES DE DOCUMENTOS ---
-    const documentos = [
-      { nombre: "PDF", porcentaje: 0.8 },
-      { nombre: "Excel", porcentaje: 0.65 },
-      { nombre: "XML", porcentaje: 0.92 },
-      { nombre: "DOCX", porcentaje: 0.5 },
-      { nombre: "PPT", porcentaje: 0.4 },
-      { nombre: "CSV", porcentaje: 0.75 },
-      { nombre: "JSON", porcentaje: 0.6 },
-      { nombre: "HTML", porcentaje: 0.85 },
-      { nombre: "TXT", porcentaje: 0.7 },
-      { nombre: "MD", porcentaje: 0.55 },
-      { nombre: "Otros", porcentaje: 0.3 }
-    ];
+      jsonData.forEach(row => {
+        const valor = row['Promedio Cumplimiento'];
+        if (typeof valor === 'number') {
+          suma += valor;
+          total++;
+        }
+      });
 
-    const chartDocs = document.getElementById('chartDocs');
-    chartDocs.innerHTML = '';
+      const promedioGeneral = total ? Math.round((suma / total) * 100) : 0;
+      const pendiente = 100 - promedioGeneral;
 
-    documentos.forEach(doc => {
-      const container = document.createElement('div');
-      container.classList.add('bar-vertical-container');
+      const pie = document.getElementById('pieChart');
+      pie.style.background = `
+        conic-gradient(
+          var(--verde) 0% ${promedioGeneral}%,
+          var(--gris) ${promedioGeneral}% 100%
+        )
+      `;
 
-      const bar = document.createElement('div');
-      bar.classList.add('bar-vertical');
-      bar.style.height = `${doc.porcentaje * 100}%`;
-      bar.title = `${doc.nombre}: ${Math.round(doc.porcentaje * 100)}%`;
-      bar.textContent = `${Math.round(doc.porcentaje * 100)}%`;
+      document.getElementById('pieCumplido').textContent = `${promedioGeneral}%`;
+      document.getElementById('piePendiente').textContent = `${pendiente}%`;
 
-      const label = document.createElement('div');
-      label.classList.add('bar-label-vertical');
-      label.textContent = doc.nombre;
-
-      container.appendChild(bar);
-      container.appendChild(label);
-      chartDocs.appendChild(container);
-    });
+    reader.readAsArrayBuffer(file);
   </script>
 </body>
 </html>
