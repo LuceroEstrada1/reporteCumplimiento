@@ -127,34 +127,43 @@
       color: #384242;
     }
 
-    /* GRÁFICA */
+    /* GRÁFICA VERTICAL */
     .chart h3 {
       margin-bottom: 16px;
     }
 
-    .bar {
-      margin-bottom: 12px;
-    }
-
-    .bar-label {
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .bar-track {
-      background: #ecf0f1;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 26px;
-      background: rgb(0, 0, 130);
-      color: white;
-      font-size: 13px;
-      padding-left: 8px;
+    .chart-vertical {
       display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 180px;
+    }
+
+    .bar-vertical-container {
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      flex: 1;
+    }
+
+    .bar-vertical {
+      width: 30px;
+      background: var(--azul);
+      text-align: center;
+      color: white;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-radius: 6px 6px 0 0;
+      transition: 0.3s;
+      font-size: 12px;
+    }
+
+    .bar-label-vertical {
+      margin-top: 6px;
+      font-size: 12px;
+      text-align: center;
+      word-break: break-word;
     }
 
     /* TABLA */
@@ -188,12 +197,16 @@
 
     /* SEMÁFORO */
     .status {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      color: white;
-      display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    display: inline-block;
+
+    width: 70px;        /* ancho fijo */
+    text-align: center;  /* centra el texto */
+    box-sizing: border-box; /* incluye padding dentro del ancho */
     }
 
     .green { background: var(--verde); }
@@ -226,30 +239,10 @@
       <span>Cumplimiento Total</span>
     </div>
 
-    <!-- GRÁFICA -->
+    <!-- GRÁFICA VERTICAL DOCUMENTOS -->
     <div class="card chart">
       <h3>Documentos Entregados</h3>
-
-      <div class="bar">
-        <div class="bar-label">PDF</div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: 80%">80%</div>
-        </div>
-      </div>
-
-      <div class="bar">
-        <div class="bar-label">Excel</div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: 65%">65%</div>
-        </div>
-      </div>
-
-      <div class="bar">
-        <div class="bar-label">XML</div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: 92%">92%</div>
-        </div>
-      </div>
+      <div class="chart-vertical" id="chartDocs"></div>
     </div>
 
     <!-- TABLA EMPLEADOS -->
@@ -303,24 +296,23 @@
 
             tbody.innerHTML = ''; // Limpiamos la tabla
 
+            // Convertir a porcentaje y guardar en objeto temporal
             jsonData.forEach(row => {
-                const nombre = row['Encargado'] || '';
                 let porcentaje = row['Promedio cumplimiento'] || 0;
-                porcentaje = Math.round(porcentaje * 100);
-                row._porcentaje = porcentaje; // guardamos el porcentaje calculado en el objeto
+                row._porcentaje = Math.round(porcentaje * 100);
             });
 
-            // Ordenamos de mayor a menor
+            // Ordenar de mayor a menor
             jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
 
-            // Ahora sí llenamos la tabla
+            // Llenar tabla
             jsonData.forEach(row => {
                 const nombre = row['Encargado'] || '';
                 const porcentaje = row._porcentaje;
 
                 let estado = '', clase = '';
                 if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
-                else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
+                else if (porcentaje >= 70) { estado = 'Medio'; clase = 'yellow'; }
                 else { estado = 'Bajo'; clase = 'red'; }
 
                 const tr = document.createElement('tr');
@@ -354,6 +346,43 @@
       };
 
       html2pdf().set(opt).from(dashboard).save();
+    });
+
+    // --- BARRAS VERTICALES DE DOCUMENTOS ---
+    const documentos = [
+      { nombre: "PDF", porcentaje: 0.8 },
+      { nombre: "Excel", porcentaje: 0.65 },
+      { nombre: "XML", porcentaje: 0.92 },
+      { nombre: "DOCX", porcentaje: 0.5 },
+      { nombre: "PPT", porcentaje: 0.4 },
+      { nombre: "CSV", porcentaje: 0.75 },
+      { nombre: "JSON", porcentaje: 0.6 },
+      { nombre: "HTML", porcentaje: 0.85 },
+      { nombre: "TXT", porcentaje: 0.7 },
+      { nombre: "MD", porcentaje: 0.55 },
+      { nombre: "Otros", porcentaje: 0.3 }
+    ];
+
+    const chartDocs = document.getElementById('chartDocs');
+    chartDocs.innerHTML = '';
+
+    documentos.forEach(doc => {
+      const container = document.createElement('div');
+      container.classList.add('bar-vertical-container');
+
+      const bar = document.createElement('div');
+      bar.classList.add('bar-vertical');
+      bar.style.height = `${doc.porcentaje * 100}%`;
+      bar.title = `${doc.nombre}: ${Math.round(doc.porcentaje * 100)}%`;
+      bar.textContent = `${Math.round(doc.porcentaje * 100)}%`;
+
+      const label = document.createElement('div');
+      label.classList.add('bar-label-vertical');
+      label.textContent = doc.nombre;
+
+      container.appendChild(bar);
+      container.appendChild(label);
+      chartDocs.appendChild(container);
     });
   </script>
 </body>
