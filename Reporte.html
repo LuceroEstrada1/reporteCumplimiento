@@ -265,21 +265,6 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Ana López</td>
-            <td>92%</td>
-            <td><span class="status green">Alto</span></td>
-          </tr>
-          <tr>
-            <td>Carlos Pérez</td>
-            <td>78%</td>
-            <td><span class="status yellow">Medio</span></td>
-          </tr>
-          <tr>
-            <td>María Gómez</td>
-            <td>65%</td>
-            <td><span class="status red">Bajo</span></td>
-          </tr>
         </tbody>
       </table>
     </div>
@@ -294,22 +279,61 @@
     // Botón Importar Excel
     const btnImportar = document.getElementById('btnImportar');
     const fileInput = document.getElementById('fileInput');
+    const tbody = document.querySelector('table tbody');
 
     btnImportar.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        console.log('Datos Excel:', jsonData);
-      };
-      reader.readAsArrayBuffer(file);
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            const sheetName = 'Promedios por encargado';
+            if (!workbook.SheetNames.includes(sheetName)) {
+                alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
+                return;
+            }
+
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+            tbody.innerHTML = ''; // Limpiamos la tabla
+
+            jsonData.forEach(row => {
+                const nombre = row['Encargado'] || '';
+                let porcentaje = row['Promedio cumplimiento'] || 0;
+                porcentaje = Math.round(porcentaje * 100);
+                row._porcentaje = porcentaje; // guardamos el porcentaje calculado en el objeto
+            });
+
+            // Ordenamos de mayor a menor
+            jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
+
+            // Ahora sí llenamos la tabla
+            jsonData.forEach(row => {
+                const nombre = row['Encargado'] || '';
+                const porcentaje = row._porcentaje;
+
+                let estado = '', clase = '';
+                if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
+                else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
+                else { estado = 'Bajo'; clase = 'red'; }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${nombre}</td>
+                    <td>${porcentaje}%</td>
+                    <td><span class="status ${clase}">${estado}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
     });
 
     // Botón PDF
