@@ -278,123 +278,123 @@
         const reader = new FileReader();
 
         reader.onload = function(event) {
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
 
-            const sheetName = 'Promedios por encargado';
-            if (!workbook.SheetNames.includes(sheetName)) {
-                alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
-                return;
-            }
-
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-            tbody.innerHTML = ''; // Limpiamos la tabla
-
-            // Convertir a porcentaje y guardar en objeto temporal
-            jsonData.forEach(row => {
-                let porcentaje = row['Promedio cumplimiento'] || 0;
-                row._porcentaje = Math.round(porcentaje * 100);
-            });
-
-            // Ordenar de mayor a menor
-            jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
-
-            // Llenar tabla
-            jsonData.forEach(row => {
-                const nombre = row['Encargado'] || '';
-                const porcentaje = row._porcentaje;
-
-                let estado = '', clase = '';
-                if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
-                else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
-                else { estado = 'Bajo'; clase = 'red'; }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${nombre}</td>
-                    <td>${porcentaje}%</td>
-                    <td><span class="status ${clase}">${estado}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-          // --- BARRAS DE PROGRESO POR DOCUMENTO (TOTAL EN 0) ---
-          const sheetNameDocs = 'Total_Documentos';
-          if (!workbook.SheetNames.includes(sheetNameDocs)) {
-              alert(`No se encontró la pestaña "${sheetNameDocs}"`);
+          const sheetName = 'Promedios por encargado';
+          if (!workbook.SheetNames.includes(sheetName)) {
+              alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
               return;
           }
 
-          const worksheetDocs = workbook.Sheets[sheetNameDocs];
-          const rowsDocs = XLSX.utils.sheet_to_json(worksheetDocs, { defval: 0 });
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-          const chartDocs = document.getElementById('chartDocs');
-          chartDocs.innerHTML = '';
+          tbody.innerHTML = ''; // Limpiamos la tabla
 
-          rowsDocs.forEach(row => {
-            const nombre = row['DOCUMENTOS'] || '';
-            const total = Number(row['TOTAL']) || 0;
-            const totalCero = Number(row['TOTAL EN 0']) || 0;
-            if (!total) return; // evitamos dividir entre 0
-
-            // Porcentaje pendiente (TOTAL EN 0)
-            const porcentajePendiente = Math.round((totalCero / total) * 100);
-            // Porcentaje cumplido
-            const porcentajeCumplido = 100 - porcentajePendiente;
-
-            const container = document.createElement('div');
-            container.classList.add('bar-vertical-container');
-            container.style.height = '300px';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.alignItems = 'center';
-
-            // Barra principal
-            const bar = document.createElement('div');
-            bar.style.width = '36px';
-            bar.style.height = '100%';
-            bar.style.borderRadius = '8px';
-            bar.style.overflow = 'hidden';
-            bar.style.display = 'flex';
-            bar.style.flexDirection = 'column-reverse'; // para que la parte roja quede arriba
-
-            // Barra verde (cumplido)
-            const divCumplido = document.createElement('div');
-            divCumplido.style.height = porcentajeCumplido + '%';
-            divCumplido.style.background = 'linear-gradient(to top, #2ecc71, #27ae60)';
-
-            // Barra roja (pendiente)
-            const divPendiente = document.createElement('div');
-            divPendiente.style.height = porcentajePendiente + '%';
-            divPendiente.style.background = 'linear-gradient(to top, #e74c3c, #c0392b)';
-            divPendiente.style.display = 'flex';
-            divPendiente.style.alignItems = 'center';
-            divPendiente.style.justifyContent = 'center';
-            divPendiente.style.color = 'white';
-            divPendiente.style.fontWeight = '600';
-            divPendiente.style.fontSize = '12px';
-            divPendiente.textContent = porcentajePendiente + '%'; // solo en rojo
-
-            // Agregamos las barras al contenedor principal
-            bar.appendChild(divPendiente);
-            bar.appendChild(divCumplido);
-
-            // Etiqueta con el nombre del documento
-            const label = document.createElement('div');
-            label.textContent = nombre;
-            label.style.marginTop = '8px';
-            label.style.textAlign = 'center';
-            label.style.fontSize = '12px';
-            label.style.wordBreak = 'break-word';
-
-            container.appendChild(bar);
-            container.appendChild(label);
-            chartDocs.appendChild(container);
+          // Convertir a porcentaje y guardar en objeto temporal
+          jsonData.forEach(row => {
+              let porcentaje = row['Promedio cumplimiento'] || 0;
+              row._porcentaje = Math.round(porcentaje * 100);
           });
-        };
 
+          // Ordenar de mayor a menor
+          jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
+
+          // Llenar tabla
+          jsonData.forEach(row => {
+            const nombre = row['Encargado'] || '';
+            const porcentaje = row._porcentaje;
+
+            let estado = '', clase = '';
+            if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
+            else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
+            else { estado = 'Bajo'; clase = 'red'; }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${nombre}</td>
+                <td>${porcentaje}%</td>
+                <td><span class="status ${clase}">${estado}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // --- BARRAS DE PROGRESO POR DOCUMENTO (TOTAL EN 0) ---
+        const sheetNameDocs = 'Total_Documentos';
+        if (!workbook.SheetNames.includes(sheetNameDocs)) {
+            alert(`No se encontró la pestaña "${sheetNameDocs}"`);
+            return;
+        }
+
+        const worksheetDocs = workbook.Sheets[sheetNameDocs];
+        const rowsDocs = XLSX.utils.sheet_to_json(worksheetDocs, { defval: 0 });
+
+        const chartDocs = document.getElementById('chartDocs');
+        chartDocs.innerHTML = '';
+
+        rowsDocs.forEach(row => {
+          const nombre = row['DOCUMENTOS'] || '';
+          const total = Number(row['TOTAL']) || 0;
+          const totalCero = Number(row['TOTAL ENTREGADOS']) || 0;
+          if (!total) return; // evitamos dividir entre 0
+
+          // Porcentaje cumplido
+          const porcentajeCumplido = Math.round((totalCero / total) * 100);
+          // Porcentaje pendiente (TOTAL EN 0)
+          const porcentajePendiente = 100 - porcentajeCumplido;
+
+          const container = document.createElement('div');
+          container.classList.add('bar-vertical-container');
+          container.style.height = '300px';
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.alignItems = 'center';
+
+          // Barra principal
+          const bar = document.createElement('div');
+          bar.style.width = '36px';
+          bar.style.height = '100%';
+          bar.style.borderRadius = '8px';
+          bar.style.overflow = 'hidden';
+          bar.style.display = 'flex';
+          bar.style.flexDirection = 'column-reverse'; // para que la parte roja quede arriba
+
+          // Barra roja (pendiente)
+          const divCumplido = document.createElement('div');
+          divCumplido.style.height = porcentajePendiente + '%';
+          divCumplido.style.background = 'linear-gradient(to top, #e74c3c, #c0392b)';
+
+          // Barra verde (cumplido)
+          const divPendiente = document.createElement('div');
+          divPendiente.style.height = porcentajeCumplido + '%';
+          divPendiente.style.background = 'linear-gradient(to top, #2ecc71, #27ae60)';
+          divPendiente.style.display = 'flex';
+          divPendiente.style.alignItems = 'center';
+          divPendiente.style.justifyContent = 'center';
+          divPendiente.style.color = 'white';
+          divPendiente.style.fontWeight = '600';
+          divPendiente.style.fontSize = '12px';
+          divPendiente.textContent = porcentajeCumplido + '%'; // solo en verde
+
+          // Agregamos las barras al contenedor principal
+          bar.appendChild(divPendiente);
+          bar.appendChild(divCumplido);
+
+          // Etiqueta con el nombre del documento
+          const label = document.createElement('div');
+          label.textContent = nombre;
+          label.style.marginTop = '8px';
+          label.style.textAlign = 'center';
+          label.style.fontSize = '12px';
+          label.style.wordBreak = 'break-word';
+
+          container.appendChild(bar);
+          container.appendChild(label);
+          chartDocs.appendChild(container);
+        });
+        };
+        
         reader.readAsArrayBuffer(file);
     });
 
@@ -417,35 +417,9 @@
 
       html2pdf().set(opt).from(dashboard).save();
     });
-    /* ============================
-         GRÁFICA DE PASTEL
-      ============================ */
-      let suma = 0;
-      let total = 0;
+  
 
-      jsonData.forEach(row => {
-        const valor = row['Promedio Cumplimiento'];
-        if (typeof valor === 'number') {
-          suma += valor;
-          total++;
-        }
-      });
-
-      const promedioGeneral = total ? Math.round((suma / total) * 100) : 0;
-      const pendiente = 100 - promedioGeneral;
-
-      const pie = document.getElementById('pieChart');
-      pie.style.background = `
-        conic-gradient(
-          var(--verde) 0% ${promedioGeneral}%,
-          var(--gris) ${promedioGeneral}% 100%
-        )
-      `;
-
-      document.getElementById('pieCumplido').textContent = `${promedioGeneral}%`;
-      document.getElementById('piePendiente').textContent = `${pendiente}%`;
-
-    reader.readAsArrayBuffer(file);
+  reader.readAsArrayBuffer(file);
   </script>
 </body>
 </html>
