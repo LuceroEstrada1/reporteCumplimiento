@@ -180,7 +180,7 @@
     }
 
     .green { background: var(--verde); }
-    .yellow { background: var(--amarillo); color: #2c3e50; }
+    .yellow { background: var(--amarillo); color: #4c502e; }
     .red { background: var(--rojo); }
 
     .pie-container {
@@ -190,8 +190,8 @@
     }
 
     .pie {
-    width: 200px;     /* ✅ más grande */
-    height: 200px;
+    width: 250px;     /* ✅ más grande */
+    height: 250px;
     border-radius: 50%;
     background: conic-gradient(var(--gris) 0% 100%);
     }
@@ -265,62 +265,88 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <script>
-    // Botón Importar Excel
-    const btnImportar = document.getElementById('btnImportar');
-    const fileInput = document.getElementById('fileInput');
-    const tbody = document.querySelector('table tbody');
+  // Botón Importar Excel
+  const btnImportar = document.getElementById('btnImportar');
+  const fileInput = document.getElementById('fileInput');
+  const tbody = document.querySelector('table tbody');
 
-    btnImportar.addEventListener('click', () => fileInput.click());
+  btnImportar.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
+  fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
 
-        reader.onload = function(event) {
-          const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-          const sheetName = 'Promedios por encargado';
-          if (!workbook.SheetNames.includes(sheetName)) {
-              alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
-              return;
-          }
+        const sheetName = 'Promedios por encargado';
+        if (!workbook.SheetNames.includes(sheetName)) {
+            alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
+            return;
+        }
 
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-          tbody.innerHTML = ''; // Limpiamos la tabla
+        tbody.innerHTML = ''; // Limpiamos la tabla
 
-          // Convertir a porcentaje y guardar en objeto temporal
-          jsonData.forEach(row => {
-              let porcentaje = row['Promedio cumplimiento'] || 0;
-              row._porcentaje = Math.round(porcentaje * 100);
-          });
-
-          // Ordenar de mayor a menor
-          jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
-
-          // Llenar tabla
-          jsonData.forEach(row => {
-            const nombre = row['Encargado'] || '';
-            const porcentaje = row._porcentaje;
-
-            let estado = '', clase = '';
-            if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
-            else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
-            else { estado = 'Bajo'; clase = 'red'; }
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${nombre}</td>
-                <td>${porcentaje}%</td>
-                <td><span class="status ${clase}">${estado}</span></td>
-            `;
-            tbody.appendChild(tr);
+        // Convertir a porcentaje y guardar en objeto temporal
+        jsonData.forEach(row => {
+            let porcentaje = row['Promedio cumplimiento'] || 0;
+            row._porcentaje = Math.round(porcentaje * 100);
         });
 
-        // --- BARRAS DE PROGRESO POR DOCUMENTO (TOTAL EN 0) ---
+        // Ordenar de mayor a menor
+        jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
+
+        // Llenar tabla
+        jsonData.forEach(row => {
+          const nombre = row['Encargado'] || '';
+          const porcentaje = row._porcentaje;
+
+          let estado = '', clase = '';
+          if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
+          else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
+          else { estado = 'Bajo'; clase = 'red'; }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td>${nombre}</td>
+              <td>${porcentaje}%</td>
+              <td><span class="status ${clase}">${estado}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // --- GRÁFICA DE PASTEL ---
+        let porcentajeGlobal = 0;
+
+        // Usamos el promedio de todos los encargados
+        if(jsonData.length > 0) {
+            let total = 0;
+            jsonData.forEach(row => {
+                // Convertimos a número decimal
+                let valor = parseFloat(row['Porcentaje Global'] || row['Porcentaje Global ']); // <- ejemplo si hay espacio
+                if (!isNaN(valor)) total += valor;
+            });
+            porcentajeGlobal = total / jsonData.length;  // promedio decimal 0-1
+        }
+
+        // Convertimos a porcentaje
+        const porcentajeCumplido = Math.round(porcentajeGlobal * 100);
+        const porcentajePendiente = 100 - porcentajeCumplido;
+
+        // Actualizamos los textos de la leyenda
+        document.getElementById('piePendiente').textContent = porcentajeCumplido + '%';
+        document.getElementById('pieCumplido').textContent = porcentajePendiente + '%';
+
+        // Actualizamos el color del pastel
+        const pie = document.getElementById('pieChart');
+        pie.style.background = `conic-gradient(var(--verde) 0% ${porcentajeCumplido}%, var(--amarillo) ${porcentajeCumplido}% 100%)`;
+
+        // --- BARRAS DE PROGRESO POR DOCUMENTO ---
         const sheetNameDocs = 'Total_Documentos';
         if (!workbook.SheetNames.includes(sheetNameDocs)) {
             alert(`No se encontró la pestaña "${sheetNameDocs}"`);
@@ -335,14 +361,24 @@
 
         rowsDocs.forEach(row => {
           const nombre = row['DOCUMENTOS'] || '';
-          const total = Number(row['TOTAL']) || 0;
-          const totalCero = Number(row['TOTAL ENTREGADOS']) || 0;
-          if (!total) return; // evitamos dividir entre 0
 
-          // Porcentaje cumplido
-          const porcentajeCumplido = Math.round((totalCero / total) * 100);
-          // Porcentaje pendiente (TOTAL EN 0)
-          const porcentajePendiente = 100 - porcentajeCumplido;
+          function limpiarNumero(valor) {
+              if (valor === null || valor === undefined) return 0;
+              let num = String(valor).trim().replace('%','').replace(',', '.');
+              num = parseFloat(num);
+              return isNaN(num) ? 0 : num;
+          }
+
+          let total = limpiarNumero(row['TOTAL']);
+          let entregados = limpiarNumero(row['TOTAL ENTREGADOS']);
+          if (total === 0) return;
+
+          const porcentaje = Math.round((entregados / total) * 100);
+
+          let color = '';
+          if (porcentaje >= 95) color = '#e74c3c';
+          else if (porcentaje >= 85) color = '#2ecc71';
+          else color = '#2ecc71';
 
           const container = document.createElement('div');
           container.classList.add('bar-vertical-container');
@@ -351,37 +387,27 @@
           container.style.flexDirection = 'column';
           container.style.alignItems = 'center';
 
-          // Barra principal
           const bar = document.createElement('div');
           bar.style.width = '36px';
           bar.style.height = '100%';
           bar.style.borderRadius = '8px';
-          bar.style.overflow = 'hidden';
+          bar.style.background = '#eee';
           bar.style.display = 'flex';
-          bar.style.flexDirection = 'column-reverse'; // para que la parte roja quede arriba
+          bar.style.flexDirection = 'column-reverse';
 
-          // Barra roja (pendiente)
-          const divCumplido = document.createElement('div');
-          divCumplido.style.height = porcentajePendiente + '%';
-          divCumplido.style.background = 'linear-gradient(to top, #e74c3c, #c0392b)';
+          const fill = document.createElement('div');
+          fill.style.height = porcentaje + '%';
+          fill.style.background = color;
+          fill.style.display = 'flex';
+          fill.style.alignItems = 'center';
+          fill.style.justifyContent = 'center';
+          fill.style.color = 'white';
+          fill.style.fontWeight = '600';
+          fill.style.fontSize = '12px';
+          fill.textContent = porcentaje + '%';
 
-          // Barra verde (cumplido)
-          const divPendiente = document.createElement('div');
-          divPendiente.style.height = porcentajeCumplido + '%';
-          divPendiente.style.background = 'linear-gradient(to top, #2ecc71, #27ae60)';
-          divPendiente.style.display = 'flex';
-          divPendiente.style.alignItems = 'center';
-          divPendiente.style.justifyContent = 'center';
-          divPendiente.style.color = 'white';
-          divPendiente.style.fontWeight = '600';
-          divPendiente.style.fontSize = '12px';
-          divPendiente.textContent = porcentajeCumplido + '%'; // solo en verde
+          bar.appendChild(fill);
 
-          // Agregamos las barras al contenedor principal
-          bar.appendChild(divPendiente);
-          bar.appendChild(divCumplido);
-
-          // Etiqueta con el nombre del documento
           const label = document.createElement('div');
           label.textContent = nombre;
           label.style.marginTop = '8px';
@@ -393,33 +419,29 @@
           container.appendChild(label);
           chartDocs.appendChild(container);
         });
-        };
-        
-        reader.readAsArrayBuffer(file);
-    });
-
-    // Botón PDF
-    const btnPDF = document.getElementById('btnPDF');
-
-    btnPDF.addEventListener('click', () => {
-      const dashboard = document.getElementById('dashboard').cloneNode(true);
-
-      // Ocultamos los botones en la copia
-      dashboard.querySelectorAll('.header-actions').forEach(el => el.classList.add('no-pdf'));
-
-      const opt = {
-        margin:       10,
-        filename:     'reporte_cumplimiento.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(dashboard).save();
-    });
-  
+      reader.readAsArrayBuffer(file);
+  });
 
-  reader.readAsArrayBuffer(file);
-  </script>
+  // Botón PDF
+  const btnPDF = document.getElementById('btnPDF');
+
+  btnPDF.addEventListener('click', () => {
+    const dashboard = document.getElementById('dashboard').cloneNode(true);
+    dashboard.querySelectorAll('.header-actions').forEach(el => el.classList.add('no-pdf'));
+
+    const opt = {
+      margin:       10,
+      filename:     'reporte_cumplimiento.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(dashboard).save();
+  });
+</script>
+
 </body>
 </html>
