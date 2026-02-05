@@ -34,7 +34,6 @@
       gap: 24px;
     }
 
-    /* HEADER */
     header {
       grid-column: 1 / -1;
       display: flex;
@@ -87,66 +86,63 @@
       color: rgb(178, 0, 0);
     }
 
-    /* Ocultar en PDF */
     .no-pdf {
       display: none;
     }
     
-    /* ===== MODO PDF ===== */
     .pdf-mode {
-      transform: scale(0.60);      /* Ajusta aquí: 0.7 – 0.85 */
+      transform: scaleX(0.60) scaleY(0.60);
       transform-origin: top left;
-      width: 133%;                 /* 100 / scale */
     }
 
-      /* TARJETAS */
-      .card {
-        background: #fff;
-        border-radius: 10px;
-        padding: 24px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        width: 100%;
-      }
+    .pdf-mode .header-actions {
+      display: none;
+    }
 
-      /* GRÁFICA VERTICAL */
-      .chart h3 {
-        margin-bottom: 16px;
-        width: 90%;
-      }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      width: 100%;
+    }
 
-      .chart-vertical {
-      display: flex;
-      align-items: flex-end;
-      height: 300px;        /* ✅ MÁS ALTA */
-      gap: 3px;            /* ✅ separación entre barras */
-      padding: 0 10px;
-      }
+    .chart h3 {
+      margin-bottom: 16px;
+      width: 90%;
+    }
 
-      .bar-vertical-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 60px;
-      }
+    .chart-vertical {
+    display: flex;
+    align-items: flex-end;
+    height: 300px;       
+    gap: 3px;           
+    padding: 0 10px;
+    }
 
-      .bar-vertical {
-      width: 100%;        /* ✅ barras más gruesas */
-      background: linear-gradient(
-          to top,
-          #0a3cff,
-          #3b6cff
-      );
-      color: white;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      border-radius: 8px 8px 0 0;
-      font-size: 12px;
-      transition: height 0.6s ease;
-      }
+    .bar-vertical-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60px;
+    }
 
+    .bar-vertical {
+    width: 100%;       
+    background: linear-gradient(
+        to top,
+        #0a3cff,
+        #3b6cff
+    );
+    color: white;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 8px 8px 0 0;
+    font-size: 12px;
+    transition: height 0.6s ease;
+    }
 
-    /* TABLA */
     .table {
       grid-column: 1 / -1;
     }
@@ -176,7 +172,6 @@
       border-bottom: 1px solid #eee;
     }
 
-    /* SEMÁFORO */
     .status {
     padding: 6px 14px;
     border-radius: 20px;
@@ -185,9 +180,9 @@
     color: white;
     display: inline-block;
 
-    width: 70px;        /* ancho fijo */
-    text-align: center;  /* centra el texto */
-    box-sizing: border-box; /* incluye padding dentro del ancho */
+    width: 70px;      
+    text-align: center; 
+    box-sizing: border-box; 
     }
 
     .green { background: var(--verde); }
@@ -201,7 +196,7 @@
     }
 
     .pie {
-    width: 250px;     /* ✅ más grande */
+    width: 250px;   
     height: 250px;
     border-radius: 50%;
     background: conic-gradient(var(--gris) 0% 100%);
@@ -217,9 +212,7 @@
 </head>
 
 <body>
-
   <div class="dashboard" id="dashboard">
-    <!-- HEADER -->
     <header>
       <div class="header-left">
         <h1>Reporte de Cumplimiento</h1>
@@ -232,12 +225,12 @@
         <button class="btn btn-primary" id="btnPDF">Convertir a PDF</button>
       </div>
     </header>
-    <!-- GRÁFICA DE PASTEL -->
+
     <div class="card">
     <h3>Cumplimiento General</h3>
     <div>
       <div class="pie-container">
-          <div class="pie" id="pieChart"></div>
+          <canvas id="pieCanvas" width="250" height="250"></canvas>
           <div class="pie-legend">
           <span><b id="pieCumplido">0%</b> Cumplido</span>
           <span><b id="piePendiente">0%</b> Pendiente</span>
@@ -246,13 +239,11 @@
     </div>
     </div>
 
-    <!-- GRÁFICA VERTICAL DOCUMENTOS -->
     <div class="card chart">
       <h3>Documentos Entregados</h3>
       <div class="chart-vertical" id="chartDocs"></div>
     </div>
 
-    <!-- TABLA EMPLEADOS -->
     <div class="card table">
       <h3>Detalle por Empleado</h3>
 
@@ -270,179 +261,196 @@
     </div>
 
   </div>
-
-  <!-- Librerías -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
   <script>
-  // Botón Importar Excel
   const btnImportar = document.getElementById('btnImportar');
   const fileInput = document.getElementById('fileInput');
   const tbody = document.querySelector('table tbody');
 
+  function dibujarPie(porcentajeCumplido) {
+    const canvas = document.getElementById('pieCanvas');
+    const ctx = canvas.getContext('2d');
+    const radius = canvas.width / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#f4f6f9';
+    ctx.beginPath();
+    ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+    ctx.fill();
+
+    const startAngle = -Math.PI / 2;
+    const endAngle = startAngle + (porcentajeCumplido / 100) * 2 * Math.PI;
+
+    ctx.fillStyle = '#2ecc71';
+    ctx.beginPath();
+    ctx.moveTo(radius, radius);
+    ctx.arc(radius, radius, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fill();
+
+    if (porcentajeCumplido < 100) {
+      ctx.fillStyle = '#f1c40f';
+      ctx.beginPath();
+      ctx.moveTo(radius, radius);
+      ctx.arc(radius, radius, radius, endAngle, startAngle + 2 * Math.PI);
+      ctx.closePath();
+      ctx.fill();
+    }
+}
+
+
   btnImportar.addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
 
-      reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+    reader.onload = function(event) {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
 
-        const sheetName = 'Promedios por encargado';
-        if (!workbook.SheetNames.includes(sheetName)) {
-            alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
-            return;
-        }
+      const sheetName = 'Promedios por encargado';
+      if (!workbook.SheetNames.includes(sheetName)) {
+          alert(`No se encontró la pestaña "${sheetName}" en el archivo.`);
+          return;
+      }
 
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-        tbody.innerHTML = ''; // Limpiamos la tabla
+      tbody.innerHTML = ''; // Limpiamos la tabla
 
-        // Convertir a porcentaje y guardar en objeto temporal
+      // Convertir a porcentaje y guardar en objeto temporal
+      jsonData.forEach(row => {
+          let porcentaje = row['Promedio cumplimiento'] || 0;
+          row._porcentaje = Math.round(porcentaje * 100);
+      });
+
+      // Ordenar de mayor a menor
+      jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
+
+      // Llenar tabla
+      jsonData.forEach(row => {
+        const nombre = row['Encargado'] || '';
+        const porcentaje = row._porcentaje;
+
+        let estado = '', clase = '';
+        if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
+        else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
+        else { estado = 'Bajo'; clase = 'red'; }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${nombre}</td>
+            <td>${porcentaje}%</td>
+            <td><span class="status ${clase}">${estado}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      let porcentajeGlobal = 0;
+
+      if(jsonData.length > 0) {
+        let total = 0;
         jsonData.forEach(row => {
-            let porcentaje = row['Promedio cumplimiento'] || 0;
-            row._porcentaje = Math.round(porcentaje * 100);
+            let valor = parseFloat(row['Porcentaje Global'] || row['Porcentaje Global ']); 
+            if (!isNaN(valor)) total += valor;
         });
+        porcentajeGlobal = total / jsonData.length;  
+      }
 
-        // Ordenar de mayor a menor
-        jsonData.sort((a, b) => b._porcentaje - a._porcentaje);
+      const porcentajeCumplido = Math.round(porcentajeGlobal * 100);
+      const porcentajePendiente = 100 - porcentajeCumplido;
 
-        // Llenar tabla
-        jsonData.forEach(row => {
-          const nombre = row['Encargado'] || '';
-          const porcentaje = row._porcentaje;
+      document.getElementById('pieCumplido').textContent = porcentajeCumplido + '%';
+      document.getElementById('piePendiente').textContent = porcentajePendiente + '%';
 
-          let estado = '', clase = '';
-          if (porcentaje >= 95) { estado = 'Alto'; clase = 'green'; }
-          else if (porcentaje >= 85) { estado = 'Medio'; clase = 'yellow'; }
-          else { estado = 'Bajo'; clase = 'red'; }
+      const pie = document.getElementById('pieChart');
+      dibujarPie(porcentajeCumplido);
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-              <td>${nombre}</td>
-              <td>${porcentaje}%</td>
-              <td><span class="status ${clase}">${estado}</span></td>
-          `;
-          tbody.appendChild(tr);
-        });
+      const sheetNameDocs = 'Total_Documentos';
+      if (!workbook.SheetNames.includes(sheetNameDocs)) {
+        alert(`No se encontró la pestaña "${sheetNameDocs}"`);
+        return;
+      }
 
-        // --- GRÁFICA DE PASTEL ---
-        let porcentajeGlobal = 0;
+      const worksheetDocs = workbook.Sheets[sheetNameDocs];
+      const rowsDocs = XLSX.utils.sheet_to_json(worksheetDocs, { defval: 0 });
 
-        // Usamos el promedio de todos los encargados
-        if(jsonData.length > 0) {
-            let total = 0;
-            jsonData.forEach(row => {
-                // Convertimos a número decimal
-                let valor = parseFloat(row['Porcentaje Global'] || row['Porcentaje Global ']); // <- ejemplo si hay espacio
-                if (!isNaN(valor)) total += valor;
-            });
-            porcentajeGlobal = total / jsonData.length;  // promedio decimal 0-1
+      const chartDocs = document.getElementById('chartDocs');
+      chartDocs.innerHTML = '';
+
+      rowsDocs.forEach(row => {
+        const nombre = row['DOCUMENTOS'] || '';
+
+        function limpiarNumero(valor) {
+            if (valor === null || valor === undefined) return 0;
+            let num = String(valor).trim().replace('%','').replace(',', '.');
+            num = parseFloat(num);
+            return isNaN(num) ? 0 : num;
         }
 
-        // Convertimos a porcentaje
-        const porcentajeCumplido = Math.round(porcentajeGlobal * 100);
-        const porcentajePendiente = 100 - porcentajeCumplido;
+        let total = limpiarNumero(row['TOTAL']);
+        let entregados = limpiarNumero(row['TOTAL ENTREGADOS']);
+        if (total === 0) return;
 
-        // Actualizamos los textos de la leyenda
-        document.getElementById('pieCumplido').textContent = porcentajeCumplido + '%';
-        document.getElementById('piePendiente').textContent = porcentajePendiente + '%';
+        const porcentaje = Math.round((entregados / total) * 100);
 
-        // Actualizamos el color del pastel
-        const pie = document.getElementById('pieChart');
-        pie.style.background = `conic-gradient(var(--verde) 0% ${porcentajeCumplido}%, var(--amarillo) ${porcentajeCumplido}% 100%)`;
+        let color = '';
+        if (porcentaje >= 95) color = '#e74c3c';
+        else if (porcentaje >= 85) color = '#2ecc71';
+        else color = '#2ecc71';
 
-        // --- BARRAS DE PROGRESO POR DOCUMENTO ---
-        const sheetNameDocs = 'Total_Documentos';
-        if (!workbook.SheetNames.includes(sheetNameDocs)) {
-            alert(`No se encontró la pestaña "${sheetNameDocs}"`);
-            return;
-        }
+        const container = document.createElement('div');
+        container.classList.add('bar-vertical-container');
+        container.style.height = '300px';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
 
-        const worksheetDocs = workbook.Sheets[sheetNameDocs];
-        const rowsDocs = XLSX.utils.sheet_to_json(worksheetDocs, { defval: 0 });
+        const bar = document.createElement('div');
+        bar.style.width = '36px';
+        bar.style.height = '100%';
+        bar.style.borderRadius = '8px';
+        bar.style.background = '#eee';
+        bar.style.display = 'flex';
+        bar.style.flexDirection = 'column-reverse';
 
-        const chartDocs = document.getElementById('chartDocs');
-        chartDocs.innerHTML = '';
+        const fill = document.createElement('div');
+        fill.style.height = porcentaje + '%';
+        fill.style.background = color;
+        fill.style.display = 'flex';
+        fill.style.alignItems = 'center';
+        fill.style.justifyContent = 'center';
+        fill.style.color = 'white';
+        fill.style.fontWeight = '600';
+        fill.style.fontSize = '12px';
+        fill.textContent = porcentaje + '%';
 
-        rowsDocs.forEach(row => {
-          const nombre = row['DOCUMENTOS'] || '';
+        bar.appendChild(fill);
 
-          function limpiarNumero(valor) {
-              if (valor === null || valor === undefined) return 0;
-              let num = String(valor).trim().replace('%','').replace(',', '.');
-              num = parseFloat(num);
-              return isNaN(num) ? 0 : num;
-          }
+        const label = document.createElement('div');
+        label.textContent = nombre;
+        label.style.marginTop = '8px';
+        label.style.textAlign = 'center';
+        label.style.fontSize = '12px';
+        label.style.wordBreak = 'break-word';
 
-          let total = limpiarNumero(row['TOTAL']);
-          let entregados = limpiarNumero(row['TOTAL ENTREGADOS']);
-          if (total === 0) return;
+        container.appendChild(bar);
+        container.appendChild(label);
+        chartDocs.appendChild(container);
+      });
+    };
 
-          const porcentaje = Math.round((entregados / total) * 100);
-
-          let color = '';
-          if (porcentaje >= 95) color = '#e74c3c';
-          else if (porcentaje >= 85) color = '#2ecc71';
-          else color = '#2ecc71';
-
-          const container = document.createElement('div');
-          container.classList.add('bar-vertical-container');
-          container.style.height = '300px';
-          container.style.display = 'flex';
-          container.style.flexDirection = 'column';
-          container.style.alignItems = 'center';
-
-          const bar = document.createElement('div');
-          bar.style.width = '36px';
-          bar.style.height = '100%';
-          bar.style.borderRadius = '8px';
-          bar.style.background = '#eee';
-          bar.style.display = 'flex';
-          bar.style.flexDirection = 'column-reverse';
-
-          const fill = document.createElement('div');
-          fill.style.height = porcentaje + '%';
-          fill.style.background = color;
-          fill.style.display = 'flex';
-          fill.style.alignItems = 'center';
-          fill.style.justifyContent = 'center';
-          fill.style.color = 'white';
-          fill.style.fontWeight = '600';
-          fill.style.fontSize = '12px';
-          fill.textContent = porcentaje + '%';
-
-          bar.appendChild(fill);
-
-          const label = document.createElement('div');
-          label.textContent = nombre;
-          label.style.marginTop = '8px';
-          label.style.textAlign = 'center';
-          label.style.fontSize = '12px';
-          label.style.wordBreak = 'break-word';
-
-          container.appendChild(bar);
-          container.appendChild(label);
-          chartDocs.appendChild(container);
-        });
-      };
-
-      reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(file);
   });
 
-  // Botón PDF
   btnPDF.addEventListener('click', () => {
-  const dashboard = document.getElementById('dashboard').cloneNode(true);
+  const dashboard = document.getElementById('dashboard');
 
-  // Ocultar acciones
-  dashboard.querySelectorAll('.header-actions').forEach(el => el.remove());
-
-  // Activar modo PDF global
   dashboard.classList.add('pdf-mode');
 
   const opt = {
@@ -450,7 +458,7 @@
     filename: 'reporte_cumplimiento.pdf',
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
-      scale: 2,
+      scale: 3,
       useCORS: true
     },
     jsPDF: {
@@ -460,11 +468,14 @@
     }
   };
 
-  html2pdf().set(opt).from(dashboard).save();
+  html2pdf()
+    .set(opt)
+    .from(dashboard)
+    .save()
+    .then(() => {
+      dashboard.classList.remove('pdf-mode');
+    });
 });
-
-
 </script>
-
 </body>
 </html>
